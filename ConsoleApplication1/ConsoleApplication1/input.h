@@ -1,5 +1,5 @@
 #pragma once
 
-int raffle();
+void raffle(int* pRand);
 
-int inputNumber();
+void inputNumber(int& refValue);

@@ -1,14 +1,14 @@
 #include <iostream>
 #include <string>
 
-int raffle() {
+void raffle(int* pRand) {
     // srand()シード変更
     // time(NULL)で時間をシードに
     // rand() % (最大値 + 最小値 + 1) + 最小値
 
     srand((unsigned int)time(NULL));
 
-    return rand() % 10;
+    *pRand = rand() % 10;
 }
 
 bool isDigit(std::string s) {
@@ -25,9 +25,8 @@ void clearInput() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
-int inputNumber() {
+void inputNumber(int& refValue) {
     std::string input;
-    int value;
 
     while (true) {
         std::cout << "0 - 9 の整数を入力 : " << std::flush;
@@ -40,12 +39,10 @@ int inputNumber() {
         }
 
         try {
-            value = std::stoi(input);
+            refValue = std::stoi(input);
         }
         catch (...) {
             continue;
         }
-
-        return value;
     }
 }

@@ -5,10 +5,12 @@
 
 int main()
 {
-    int randInt = raffle();
+    int randInt;
+    raffle(&randInt);
 
     while (true) {
-        int input = inputNumber();
+        int input;
+        inputNumber(input);
 
         ResultType result = compare(randInt, input);
         dispResult(result);
