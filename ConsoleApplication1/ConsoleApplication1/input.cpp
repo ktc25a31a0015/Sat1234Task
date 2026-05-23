@@ -40,6 +40,8 @@ void inputNumber(int& refValue) {
 
         try {
             refValue = std::stoi(input);
+
+            break;
         }
         catch (...) {
             continue;
