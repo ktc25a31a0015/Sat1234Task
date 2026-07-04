@@ -1,61 +1,53 @@
-﻿#include <stdio.h>
-#include <time.h>
+﻿#include <iostream>
+
+#include "character.h"
+#include "turn.h"
 
 int main()
 {
-	int t = (int)time(nullptr);
-	int answer = t % 10;
+	std::shared_ptr<Player> player(new Player);
+	player->setName("プレイヤー");
+	std::shared_ptr<Slime> slime(new Slime);
+	slime->setName("スライム");
+	std::shared_ptr<Goblin> goblin(new Goblin);
+	goblin->setName("ゴブリン");
 
-	int rank = 0;
+	int turnCount = 0;
 
-	bool play = true;
+	int playerMax = 0;
+	int enemyMax = 0;
 
-	while (play) {
-		printf("数値を入力して Enter\n");
-		int input;
-		scanf_s("%d", &input);
+	while (true) {
+		turnCount++;
 
-		if (answer == input) {
-			rank = 2;
+		std::cout << turnCount << " ターンスタート\n";
 
-			printf("一致！\n");
-		}
-		else {
-			if (answer < input) {
-				printf("大きい！\n");
-			}
-			else {
-				printf("小さい！\n");
-			}
+		Turn turn(player, slime, goblin);
 
-			int sub = answer - input;
-
-			if (-3 < sub && sub < 3) {
-				rank = 1;
-
-				printf("惜しい！\n");
-			}
+		if (turn.playerMax > playerMax) {
+			playerMax = turn.playerMax;
 		}
 
-		switch (rank) {
-		case 2:
-			play = false;
+		if (turn.enemyMax > enemyMax) {
+			enemyMax = turn.enemyMax;
+		}
 
-			printf("ランクS\n");
-
-			break;
-
-		case 1:
-			printf("ランクA\n");
+		if (player->isDead()) {
+			std::cout << "プレイヤー死亡\n";
 
 			break;
+		}
 
-		default:
-			printf("ランクB\n");
+		if (slime->isDead() && goblin->isDead()) {
+			std::cout << "敵全滅\n";
 
 			break;
 		}
 	}
+
+	std::cout << "戦闘ターン数 : " << turnCount << std::endl;
+	std::cout << "プレイヤーの最大与ダメージ : " << playerMax << std::endl;
+	std::cout << "いずれかの敵の最大与ダメージ : " << enemyMax << std::endl;
 
 	return 0;
 }
