@@ -1,59 +1,58 @@
-﻿#include <stdio.h>
-#include <time.h>
+﻿#include <iostream>
+
+#include "Character.h"
+#include "Swordman.h"
+#include "Wizard.h"
+#include "Summoner.h"
 
 int main()
 {
-	int t = (int)time(nullptr);
-	int answer = t % 10;
+	int turnCount = 0;
 
-	int rank = 0;
+	int allyHP = 300;
+	int enemyHP = 300;
 
-	bool play = true;
+	std::shared_ptr<Character> allies[3] = { std::make_shared<Swordman>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
+	std::shared_ptr<Character> enemies[3] = { std::make_shared<Swordman>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
 
-	while (play) {
-		printf("数値を入力して Enter\n");
-		int input;
-		scanf_s("%d", &input);
+	while (true) {
+		std::shared_ptr<Character> ally = allies[0];
+		std::shared_ptr<Character> enemy = enemies[0];
 
-		if (answer == input) {
-			rank = 2;
+		ally->actionId = 0;
+		enemy->actionId = 1;
 
-			printf("一致！\n");
-		}
-		else {
-			if (answer < input) {
-				printf("大きい！\n");
+		int allyAttack = ally->attack;
+		int enemyAttack = enemy->attack;
+
+		// 互いに攻撃したとき
+		if (ally->IsAttack() && enemy->IsAttack()) {
+			std::cout << "互いに攻撃を選択\n";
+
+			if (allyAttack == enemyAttack) {
+				std::cout << " - 味方と敵の攻撃力が一緒のため、ドローとなりました。\n";
+			}
+			else if (allyAttack > enemyAttack) {
+				enemyHP -= allyAttack;
+				std::cout << " - 味方の攻撃力が敵を上回ったため、敵の戦力を削りました。\n";
 			}
 			else {
-				printf("小さい！\n");
-			}
-
-			int sub = answer - input;
-
-			if (-3 < sub && sub < 3) {
-				rank = 1;
-
-				printf("惜しい！\n");
+				allyHP -= enemyAttack;
+				std::cout << " - 敵の攻撃力が味方を上回ったため、味方の戦力が削られました。\n";
 			}
 		}
+		else {
+			std::cout << "それぞれに別の行動を選択\n";
 
-		switch (rank) {
-		case 2:
-			play = false;
+			// 互いのキャラクターが一緒のとき
+			if (typeid(ally) == typeid(enemy)) {
+				std::cout << " - 互いのキャラクターが一緒のため、ドローとなりました。\n";
+			}
+			else {
+				if (ally->IsAttack()) {
 
-			printf("ランクS\n");
-
-			break;
-
-		case 1:
-			printf("ランクA\n");
-
-			break;
-
-		default:
-			printf("ランクB\n");
-
-			break;
+				}
+			}
 		}
 	}
 
