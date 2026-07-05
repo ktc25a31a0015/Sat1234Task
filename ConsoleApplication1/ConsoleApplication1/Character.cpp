@@ -1,43 +1,42 @@
 #include "Character.h"
 
-#include "Swordman.h"
+#include "Fencer.h"
 #include "Wizard.h"
 #include "Summoner.h"
 
-Character::Character(int attack) {
-	opponentId = -1;
-	actionId = 0;
+ResultId Character::Attack(CharacterId opponentId) {
+	ResultId result = ResultId::None;
 
-	this->attack = attack;
-}
-
-/// <summary>
-/// 0 = null,
-/// 1 = critical,
-/// 2 = counter
-/// </summary>
-int Character::TackAction(std::shared_ptr<Character> opponent) {
 	if (IsAttack()) {
-		if (typeid(opponent) == typeid(Swordman)) {
-			opponentId = 0;
-		}
-		else if (typeid(opponent) == typeid(Wizard)) {
-			opponentId = 1;
-		}
-		else if (typeid(opponent) == typeid(Summoner)) {
-			opponentId = 2;
-		}
-		else {
-			opponentId = -1;
+		switch (opponentId) {
+		case CharacterId::Fencer:
+			result = TargetFencer();
 
+			break;
+
+		case CharacterId::Wizard:
+			result = TargetWizard();
+
+			break;
+
+		case CharacterId::Summoner:
+			result = TargetSummoner();
+
+			break;
+
+		default:
 			std::cout << "‘z’èŠO‚ÌŒ^‚ªŽw’è‚³‚ê‚Ä‚¢‚Ü‚·\n";
+
+			break;
 		}
-		
-		return Attack();
 	}
-	else return 0;
+	else {
+		std::cout << "UŒ‚•s‰Â\n";
+	}
+	
+	return result;
 }
 
 bool Character::IsAttack() {
-	return actionId == 0;
+	return actionId == ActionId::Attack;
 }

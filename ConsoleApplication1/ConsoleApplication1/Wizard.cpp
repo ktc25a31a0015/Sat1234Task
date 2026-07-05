@@ -1,11 +1,17 @@
 #include "Wizard.h"
 
-bool Wizard::Attack() {
-	if (opponentId == 0) {
-
-	}
+Wizard::Wizard() {
+	attackPower = 35;
 }
 
-bool Wizard::Defence() {
+ResultId Wizard::TargetFencer() {
+	return ResultId::Critical;
+}
 
+ResultId Wizard::TargetWizard() {
+	return ResultId::Draw;
+}
+
+ResultId Wizard::TargetSummoner() {
+	return ResultId::Counter;
 }

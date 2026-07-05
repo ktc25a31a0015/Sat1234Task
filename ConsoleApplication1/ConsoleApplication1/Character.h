@@ -2,28 +2,23 @@
 
 #include <iostream>
 
+enum class CharacterId { Fencer, Wizard, Summoner };
+enum class ActionId { Attack, Defence };
+enum class ResultId { None, Draw, Critical, Counter };
+
 class Character
 {
 public:
-	Character(int attack);
-
-public:
-	int TackAction(std::shared_ptr<Character> opponent);
+	ResultId Attack(CharacterId opponentId);
 
 	bool IsAttack();
 	
 private:
-	virtual int Attack() = 0;
+	virtual ResultId TargetFencer() = 0;
+	virtual ResultId TargetWizard() = 0;
+	virtual ResultId TargetSummoner() = 0;
 
 public:
-	int actionId;
-	int attack;
-
-protected:
-	/// <summary>
-	/// 0 = Swordman,
-	/// 1 = Wizard,
-	/// 2 = Summoner,
-	/// </summary>
-	int opponentId;
+	ActionId actionId;
+	int attackPower;
 };

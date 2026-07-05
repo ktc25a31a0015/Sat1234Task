@@ -2,9 +2,9 @@
 
 #include "Character.h"
 
-class Wizard : public Character {
+class Fencer : public Character {
 public:
-	Wizard();
+	Fencer();
 
 private:
 	ResultId TargetFencer() override;
