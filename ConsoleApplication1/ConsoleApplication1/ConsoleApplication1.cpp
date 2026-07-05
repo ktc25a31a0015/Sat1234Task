@@ -29,13 +29,14 @@ int main()
 	while (allyHP > 0 && enemyHP > 0) {
 		turnCount++;
 
-		std::cout << turnCount << " ターン目スタート (味方:" << allyHP << " VS 敵:" << enemyHP << ")\n";
+		std::cout << turnCount << " ターン目スタート\n";
+		std::cout << "戦力 -> 味方:" << allyHP << " VS 敵 : " << enemyHP << '\n';
 		std::cout << std::endl;
 
 		int allyId = -1;
 		
 		while (allyId == -1) {
-			std::cout << "使用するキャラクターに当てはまるキーワードを入力してください。(戦力)\n";
+			std::cout << "使用するキャラクターに当てはまるキーワードを入力してください。(攻撃力)\n";
 			for (int i = 0; i < characterCount; i++) {
 				std::cout << characterNames[i] << "(" << allies[i]->attackPower << ") : [" << characterInitials[i] << "]";
 
@@ -176,6 +177,16 @@ int main()
 		}
 
 		std::cout << std::endl;
+		
+		// 次のターンに行くとき、画面をクリアする
+		if (allyHP > 0 && enemyHP > 0) {
+			std::cout << "任意の入力をして次のターンに進む : ";
+
+			char wait;
+			std::cin >> wait;
+
+			std::system("cls");
+		}
 	}
 
 	if (allyHP <= 0 && enemyHP <= 0) {
