@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <unordered_map>
 
 #include "Character.h"
 #include "Fencer.h"
@@ -24,6 +25,20 @@ int main()
 
 	std::shared_ptr<Character> allies[characterCount] = { std::make_shared<Fencer>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
 	std::shared_ptr<Character> enemies[characterCount] = { std::make_shared<Fencer>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
+
+	std::unordered_map<ResultId, int> allyDamage = { { ResultId::None, 0 }, { ResultId::Critical, 0 }, { ResultId::Counter, 0 } };
+	std::unordered_map<ResultId, int> enemyDamage = { { ResultId::None, 0 }, { ResultId::Critical, 0 }, { ResultId::Counter, 0 } };
+
+	std::unordered_map<CharacterId, bool> allyCharSkillConditions = { // スキル発動の前提条件
+		{ CharacterId::Fencer, (allyDamage[ResultId::None] + allyDamage[ResultId::Critical]) == 6 }, // 味方が累計６回攻撃を受ける（クリティカルを含む）
+		{ CharacterId::Wizard, allyDamage[ResultId::Critical] == 3 }, // 味方が累計３回クリティカル攻撃を受ける
+		{ CharacterId::Summoner, enemyDamage[ResultId::Counter] == 3 } // 味方が累計３回カウンター発生を成功させる
+	};
+	std::unordered_map<CharacterId, bool> allyCharSkillAvailables = { // スキルが使用可能か
+		{ CharacterId::Fencer, false },
+		{ CharacterId::Wizard, false },
+		{ CharacterId::Summoner, false }
+	};
 
 	char input;
 	while (allyHP > 0 && enemyHP > 0) {
@@ -110,10 +125,14 @@ int main()
 				}
 				else if (allyAttack > enemyAttack) {
 					enemyHP -= allyAttack;
+					enemyDamage[ResultId::None]++;
+
 					std::cout << "味方の攻撃力が敵を上回ったため、敵の戦力を削りました。\n";
 				}
 				else {
 					allyHP -= enemyAttack;
+					allyDamage[ResultId::None]++;
+
 					std::cout << "敵の攻撃力が味方を上回ったため、味方の戦力が削られました。\n";
 				}
 			}
@@ -142,11 +161,13 @@ int main()
 
 				if (ally->IsAttack()) {
 					enemyHP -= ally->attackPower * 2;
+					enemyDamage[ResultId::Critical]++;
 
 					std::cout << "敵の戦力を大幅に削りました。\n";
 				}
 				else {
 					allyHP -= enemy->attackPower * 2;
+					allyDamage[ResultId::Critical]++;
 
 					std::cout << "味方の戦力が大幅に削られました。\n";
 				}
@@ -158,11 +179,13 @@ int main()
 
 				if (ally->IsAttack()) {
 					allyHP -= ally->attackPower * 2;
+					allyDamage[ResultId::Counter]++;
 
 					std::cout << "味方の戦力が大幅に減少しました。\n";
 				}
 				else {
 					enemyHP -= enemy->attackPower * 2;
+					enemyDamage[ResultId::Counter]++;
 
 					std::cout << "敵の戦力が大幅に減少しました。\n";
 				}
@@ -177,6 +200,13 @@ int main()
 		}
 
 		std::cout << std::endl;
+
+		// スキルの発動条件に基づき、使用可能なスキルを設定
+		for (std::pair<CharacterId, bool> condition : allyCharSkillConditions) {
+			if (condition.second) {
+				allyCharSkillAvailables[condition.first] = true;
+			}
+		}
 		
 		// 次のターンに行くとき、画面をクリアする
 		if (allyHP > 0 && enemyHP > 0) {
