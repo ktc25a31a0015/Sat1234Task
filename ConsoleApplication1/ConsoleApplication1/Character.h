@@ -6,6 +6,10 @@ enum class CharacterId { Fencer, Wizard, Summoner };
 enum class ActionId { Attack, Defence };
 enum class ResultId { None, Draw, Critical, Counter };
 
+const int characterCount = 3;
+const char characterNames[characterCount][16] = { "Œ•m", "–‚–@g‚¢", "¢Š«m" };
+const char characterInitials[characterCount] = { 'f', 'w', 's' };
+
 class Character
 {
 public:

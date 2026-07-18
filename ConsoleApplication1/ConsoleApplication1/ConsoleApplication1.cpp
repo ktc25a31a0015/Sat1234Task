@@ -1,18 +1,21 @@
 ﻿#include <iostream>
 #include <unordered_map>
 
+#include "SkillManager.h"
+#include "DamageManager.h"
 #include "Character.h"
 #include "Fencer.h"
 #include "Wizard.h"
 #include "Summoner.h"
 
-const int characterCount = 3;
-const char characterNames[characterCount][16] = { "剣士", "魔法使い", "召喚士" };
-const char characterInitials[characterCount] = { 'f', 'w', 's' };
-
 const int actionCount = 2;
 const char actionNames[actionCount][8] = { "攻撃", "防御" };
 const char actionInitials[actionCount] = { 'a', 'd' };
+
+void inputClear() {
+	std::cin.clear();
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
 
 int main()
 {
@@ -26,27 +29,19 @@ int main()
 	std::shared_ptr<Character> allies[characterCount] = { std::make_shared<Fencer>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
 	std::shared_ptr<Character> enemies[characterCount] = { std::make_shared<Fencer>(), std::make_shared<Wizard>(), std::make_shared<Summoner>() };
 
-	std::unordered_map<ResultId, int> allyDamage = { { ResultId::None, 0 }, { ResultId::Critical, 0 }, { ResultId::Counter, 0 } };
-	std::unordered_map<ResultId, int> enemyDamage = { { ResultId::None, 0 }, { ResultId::Critical, 0 }, { ResultId::Counter, 0 } };
+	SkillData skill;
 
-	std::unordered_map<CharacterId, bool> allyCharSkillConditions = { // スキル発動の前提条件
-		{ CharacterId::Fencer, (allyDamage[ResultId::None] + allyDamage[ResultId::Critical]) == 6 }, // 味方が累計６回攻撃を受ける（クリティカルを含む）
-		{ CharacterId::Wizard, allyDamage[ResultId::Critical] == 3 }, // 味方が累計３回クリティカル攻撃を受ける
-		{ CharacterId::Summoner, enemyDamage[ResultId::Counter] == 3 } // 味方が累計３回カウンター発生を成功させる
-	};
-	std::unordered_map<CharacterId, bool> allyCharSkillAvailables = { // スキルが使用可能か
-		{ CharacterId::Fencer, false },
-		{ CharacterId::Wizard, false },
-		{ CharacterId::Summoner, false }
-	};
+	DamageSource allyDamage;
+	DamageSource enemyDamage;
 
-	char input;
 	while (allyHP > 0 && enemyHP > 0) {
 		turnCount++;
 
 		std::cout << turnCount << " ターン目スタート\n";
 		std::cout << "戦力 -> 味方:" << allyHP << " VS 敵 : " << enemyHP << '\n';
 		std::cout << std::endl;
+
+		skill.DispSkillInfo();
 
 		int allyId = -1;
 		
@@ -63,17 +58,20 @@ int main()
 				}
 			}
 
-			std::cin >> input;
+			char charInput;
+			std::cin >> charInput;
 
 			for (int i = 0; i < characterCount; i++) {
 				char initial = characterInitials[i];
 
-				if (input == initial) {
+				if (charInput == initial) {
 					allyId = i;
 
 					break;
 				}
 			}
+
+			inputClear();
 		}
 		std::shared_ptr<Character> ally = allies[allyId];
 		std::cout << characterNames[allyId] << "を使用して戦います。\n";
@@ -83,17 +81,21 @@ int main()
 		while (allyActionId == -1) {
 			std::cout << "選択する行動に当てはまるキーワードを入力してください。\n";
 			std::cout << "攻撃 : [a]、防御 : [d] -> ";
-			std::cin >> input;
+
+			char attackInput;
+			std::cin >> attackInput;
 
 			for (int i = 0; i < actionCount; i++) {
 				char initial = actionInitials[i];
 
-				if (input == initial) {
+				if (attackInput == initial) {
 					allyActionId = i;
 
 					break;
 				}
 			}
+
+			inputClear();
 		}
 		ally->actionId = (ActionId)allyActionId;
 		std::cout << "味方は" << actionNames[allyActionId] << "します。\n";
@@ -117,7 +119,13 @@ int main()
 
 		std::cout << " - ";
 		
-		if (ally->actionId == enemy->actionId) {
+		if ((CharacterId)allyId == CharacterId::Summoner) {
+			if (skill.TryUse(CharacterId::Summoner)) {
+				std::cout << "召喚士の特殊スキルが発動しました。\n";
+				std::cout << "特殊スキルにより、強制的にドローとなりました。\n";
+			}
+		}
+		else if (ally->actionId == enemy->actionId) {
 			// 互いに攻撃を選択したとき
 			if (ally->IsAttack() && enemy->IsAttack()) {
 				if (allyAttack == enemyAttack) {
@@ -125,13 +133,13 @@ int main()
 				}
 				else if (allyAttack > enemyAttack) {
 					enemyHP -= allyAttack;
-					enemyDamage[ResultId::None]++;
+					enemyDamage.Add(ResultId::None, (CharacterId)allyId);
 
 					std::cout << "味方の攻撃力が敵を上回ったため、敵の戦力を削りました。\n";
 				}
 				else {
 					allyHP -= enemyAttack;
-					allyDamage[ResultId::None]++;
+					allyDamage.Add(ResultId::None, (CharacterId)enemyId);
 
 					std::cout << "敵の攻撃力が味方を上回ったため、味方の戦力が削られました。\n";
 				}
@@ -160,14 +168,24 @@ int main()
 				std::cout << "クリティカル攻撃\n";
 
 				if (ally->IsAttack()) {
-					enemyHP -= ally->attackPower * 2;
-					enemyDamage[ResultId::Critical]++;
+					int multiply = 2;
 
-					std::cout << "敵の戦力を大幅に削りました。\n";
+					if ((CharacterId)allyId == CharacterId::Fencer) {
+						if (skill.TryUse(CharacterId::Fencer)) {
+							multiply = 6;
+
+							std::cout << "剣士の特殊スキルが発動しました。\n";
+						}
+					}
+
+					enemyHP -= ally->attackPower * multiply;
+					enemyDamage.Add(ResultId::Critical, (CharacterId)allyId);
+
+					std::cout << "敵の戦力を大幅に削りました。（倍率 : " << multiply << " 倍）\n";
 				}
 				else {
 					allyHP -= enemy->attackPower * 2;
-					allyDamage[ResultId::Critical]++;
+					allyDamage.Add(ResultId::Critical, (CharacterId)enemyId);
 
 					std::cout << "味方の戦力が大幅に削られました。\n";
 				}
@@ -179,13 +197,13 @@ int main()
 
 				if (ally->IsAttack()) {
 					allyHP -= ally->attackPower * 2;
-					allyDamage[ResultId::Counter]++;
+					allyDamage.Add(ResultId::Counter, (CharacterId)enemyId);
 
 					std::cout << "味方の戦力が大幅に減少しました。\n";
 				}
 				else {
 					enemyHP -= enemy->attackPower * 2;
-					enemyDamage[ResultId::Counter]++;
+					enemyDamage.Add(ResultId::Counter, (CharacterId)allyId);
 
 					std::cout << "敵の戦力が大幅に減少しました。\n";
 				}
@@ -201,11 +219,15 @@ int main()
 
 		std::cout << std::endl;
 
-		// スキルの発動条件に基づき、使用可能なスキルを設定
-		for (std::pair<CharacterId, bool> condition : allyCharSkillConditions) {
-			if (condition.second) {
-				allyCharSkillAvailables[condition.first] = true;
-			}
+		skill.CheckAvailables(allyDamage, enemyDamage);
+
+		if (skill.TryUse(CharacterId::Wizard)) {
+
+			int heal = enemyDamage.GetTypeChar(ResultId::None, CharacterId::Wizard) + enemyDamage.GetTypeChar(ResultId::None, CharacterId::Wizard);
+			allyHP += heal * 10;
+
+			std::cout << "魔法使いの特殊スキルが発動しました。\n";
+			std::cout << "自身が攻撃した " << heal << " 回 x 10 の戦力を回復させました。\n";
 		}
 		
 		// 次のターンに行くとき、画面をクリアする
@@ -214,6 +236,8 @@ int main()
 
 			char wait;
 			std::cin >> wait;
+
+			inputClear();
 
 			std::system("cls");
 		}
